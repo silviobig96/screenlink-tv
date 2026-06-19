@@ -1,0 +1,3 @@
+-keep class io.socket.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
