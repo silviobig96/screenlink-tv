@@ -13,7 +13,7 @@ data class PairingRequestDto(
 @Serializable
 data class PairingResponseDto(
     val screenId: String,
-    @SerialName("pairingCode") val pairingCode: String,
+    @SerialName("code") val pairingCode: String,
     @SerialName("expiresAt") val expiresAt: String,
 )
 
