@@ -95,7 +95,14 @@ class MainViewModel @Inject constructor(
         while (pairingJob?.isActive == true) {
             delay(POLL_INTERVAL_MS)
             when (val result = getPairingStatus(screenId)) {
-                is AppResult.Failure -> updatePairingMessage("Network unavailable. Retrying...")
+                is AppResult.Failure -> {
+                    logger.error("Pairing status polling failed", result.cause)
+                    if (result.message == PAIRING_SESSION_UNAVAILABLE) {
+                        showPairingError(result.message)
+                        return
+                    }
+                    updatePairingMessage("${result.message}. Retrying...")
+                }
                 is AppResult.Success -> when (val status = result.value) {
                     PairingStatus.Pending -> {
                         logger.info("Pairing pending")
@@ -194,6 +201,7 @@ class MainViewModel @Inject constructor(
     }
 
     private companion object {
+        const val PAIRING_SESSION_UNAVAILABLE = "Pairing session expired or unavailable. Refresh the pairing code."
         const val POLL_INTERVAL_MS = 2_500L
     }
 }

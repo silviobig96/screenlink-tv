@@ -96,7 +96,7 @@ class SocketIoDeviceClient @Inject constructor(
             } else {
                 ConnectionState.ERROR
             }
-            logger.error("Socket.IO connection failed")
+            logger.error("Socket.IO connection failed: ${message.take(120)}")
         }
         deviceSocket.io().on("reconnect_attempt") {
             mutableConnectionState.value = ConnectionState.RECONNECTING

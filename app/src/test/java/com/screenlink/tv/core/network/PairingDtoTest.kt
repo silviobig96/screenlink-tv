@@ -13,7 +13,7 @@ class PairingDtoTest {
     @Test
     fun `pairing request response parses`() {
         val result = json.decodeFromString<PairingResponseDto>(
-            """{"screenId":"screen-1","pairingCode":"123456","expiresAt":"2026-06-19T12:00:00Z"}""",
+            """{"screenId":"screen-1","code":"123456","expiresAt":"2026-06-19T12:00:00Z"}""",
         )
         assertEquals("screen-1", result.screenId)
         assertEquals("123456", result.pairingCode)
