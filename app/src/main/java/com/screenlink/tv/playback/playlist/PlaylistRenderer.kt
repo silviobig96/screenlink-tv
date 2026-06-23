@@ -13,12 +13,7 @@ import com.screenlink.tv.playback.video.FullscreenVideo
 import kotlinx.coroutines.delay
 
 @Composable
-fun PlaylistRenderer(
-    items: List<PlaylistItem>,
-    loop: Boolean,
-    onReady: () -> Unit,
-    onError: (String) -> Unit,
-) {
+fun PlaylistRenderer(items: List<PlaylistItem>, loop: Boolean, onReady: () -> Unit, onError: (String) -> Unit) {
     var index by remember(items) { mutableIntStateOf(0) }
     var imageReady by remember(index) { mutableStateOf(false) }
     val item = items.getOrNull(index) ?: return
@@ -53,7 +48,7 @@ fun PlaylistRenderer(
                 imageReady = true
                 onReady()
             },
-            onError = { onError("Playlist image could not be loaded") },
+            onError = onError,
         )
         is PlaylistItem.Video -> FullscreenVideo(
             url = item.url,

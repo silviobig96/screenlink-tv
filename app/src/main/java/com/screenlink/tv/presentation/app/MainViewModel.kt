@@ -171,7 +171,7 @@ class MainViewModel @Inject constructor(
                 it.copy(mode = ReceiverMode.Playlist(command.id, command.items, command.loop))
             }
             is ScreenCommand.ClearScreen -> {
-                mutableUiState.update { it.copy(mode = ReceiverMode.Idle) }
+                mutableUiState.update { it.copy(mode = ReceiverMode.Blank) }
                 completeCommand(command.id)
             }
             is ScreenCommand.Ping, is ScreenCommand.SyncContent -> completeCommand(command.id)

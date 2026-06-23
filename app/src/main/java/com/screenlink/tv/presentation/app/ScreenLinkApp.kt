@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.screenlink.tv.BuildConfig
 import com.screenlink.tv.common.theme.ScreenLinkTheme
+import com.screenlink.tv.domain.commands.repositories.ConnectionState
 import com.screenlink.tv.playback.image.FullscreenImage
 import com.screenlink.tv.playback.playlist.PlaylistRenderer
 import com.screenlink.tv.playback.video.FullscreenVideo
@@ -27,11 +28,15 @@ fun ScreenLinkApp(viewModel: MainViewModel) {
                 onClearDebug = if (BuildConfig.DEBUG) viewModel::clearCredentialsForDebug else null,
             )
             is ReceiverMode.Connecting -> ConnectingScreen(mode.message)
-            ReceiverMode.Idle -> IdleScreen()
+            ReceiverMode.Idle -> IdleScreen(
+                appVersion = BuildConfig.APP_VERSION_NAME,
+                connectionLabel = state.connection.toDisplayLabel(),
+            )
+            ReceiverMode.Blank -> IdleScreen(showBranding = false)
             is ReceiverMode.Image -> FullscreenImage(
                 url = mode.url,
                 onReady = { viewModel.playbackReady(mode.commandId) },
-                onError = { viewModel.playbackFailed(mode.commandId, "Image could not be loaded") },
+                onError = { viewModel.playbackFailed(mode.commandId, it) },
             )
             is ReceiverMode.Video -> FullscreenVideo(
                 url = mode.url,
@@ -51,4 +56,13 @@ fun ScreenLinkApp(viewModel: MainViewModel) {
             )
         }
     }
+}
+
+private fun ConnectionState.toDisplayLabel(): String = when (this) {
+    ConnectionState.CONNECTED -> "online"
+    ConnectionState.CONNECTING -> "connecting"
+    ConnectionState.RECONNECTING -> "reconnecting"
+    ConnectionState.ERROR -> "offline"
+    ConnectionState.UNAUTHORIZED -> "unauthorized"
+    ConnectionState.DISCONNECTED -> "offline"
 }

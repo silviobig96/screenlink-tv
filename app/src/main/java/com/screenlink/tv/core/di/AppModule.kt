@@ -1,7 +1,10 @@
 package com.screenlink.tv.core.di
 
+import com.screenlink.tv.core.config.AppConfig
 import com.screenlink.tv.core.logging.AndroidSafeLogger
 import com.screenlink.tv.core.logging.SafeLogger
+import com.screenlink.tv.core.network.media.MediaHeaders
+import com.screenlink.tv.core.network.media.MediaHttpClient
 import com.screenlink.tv.core.network.websocket.SocketIoDeviceClient
 import com.screenlink.tv.core.storage.CredentialsDataStore
 import com.screenlink.tv.data.pairing.repositories.PairingRepositoryImpl
@@ -46,5 +49,24 @@ object AppProvidesModule {
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .callTimeout(20, TimeUnit.SECONDS)
+        .build()
+
+    @Provides
+    @Singleton
+    @MediaHttpClient
+    fun provideMediaHttpClient(config: AppConfig): OkHttpClient = OkHttpClient.Builder()
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .addInterceptor { chain ->
+            chain.proceed(
+                chain.request()
+                    .newBuilder()
+                    .header("User-Agent", MediaHeaders.userAgent(config))
+                    .build(),
+            )
+        }
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(45, TimeUnit.SECONDS)
         .build()
 }

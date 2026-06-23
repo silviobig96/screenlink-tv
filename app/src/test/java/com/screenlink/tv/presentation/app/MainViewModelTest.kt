@@ -76,6 +76,70 @@ class MainViewModelTest {
         assertEquals("command-1", (viewModel.uiState.value.mode as ReceiverMode.Image).commandId)
     }
 
+    @Test
+    fun `clear screen switches to blank mode instead of branded idle`() = runTest(dispatcher) {
+        val credentialsRepository = FakeCredentialsRepository(DeviceCredentials("screen-1", "token"))
+        val commandRepository = FakeCommandRepository()
+        val viewModel = createViewModel(credentialsRepository, commandRepository)
+
+        advanceUntilIdle()
+        commandRepository.mutableConnectionState.value = ConnectionState.CONNECTED
+        advanceUntilIdle()
+
+        commandRepository.mutableCommands.emit(ScreenCommand.ClearScreen("clear-1"))
+        advanceUntilIdle()
+
+        assertEquals(ReceiverMode.Blank, viewModel.uiState.value.mode)
+        assertEquals("clear-1", commandRepository.acknowledgedCommandId)
+    }
+
+    @Test
+    fun `image playback failure reports command error and shows error state`() = runTest(dispatcher) {
+        val credentialsRepository = FakeCredentialsRepository(DeviceCredentials("screen-1", "token"))
+        val commandRepository = FakeCommandRepository()
+        val viewModel = createViewModel(credentialsRepository, commandRepository)
+
+        advanceUntilIdle()
+        viewModel.playbackFailed("command-1", "Image could not be loaded")
+
+        assertEquals("command-1", commandRepository.failedCommandId)
+        assertEquals("Image could not be loaded", commandRepository.failedMessage)
+        val mode = viewModel.uiState.value.mode as ReceiverMode.Error
+        assertEquals("Playback error", mode.title)
+        assertEquals("Image could not be loaded", mode.message)
+    }
+
+    @Test
+    fun `video playback failure reports command error and shows error state`() = runTest(dispatcher) {
+        val credentialsRepository = FakeCredentialsRepository(DeviceCredentials("screen-1", "token"))
+        val commandRepository = FakeCommandRepository()
+        val viewModel = createViewModel(credentialsRepository, commandRepository)
+
+        advanceUntilIdle()
+        viewModel.playbackFailed("command-2", "Video could not be played")
+
+        assertEquals("command-2", commandRepository.failedCommandId)
+        assertEquals("Video could not be played", commandRepository.failedMessage)
+        val mode = viewModel.uiState.value.mode as ReceiverMode.Error
+        assertEquals("Playback error", mode.title)
+        assertEquals("Video could not be played", mode.message)
+    }
+
+    private fun createViewModel(
+        credentialsRepository: FakeCredentialsRepository,
+        commandRepository: FakeCommandRepository,
+        pairingRepository: FakePairingRepository = FakePairingRepository(),
+    ) = MainViewModel(
+        getCredentials = GetCredentialsUseCase(credentialsRepository),
+        saveCredentials = SaveCredentialsUseCase(credentialsRepository),
+        clearCredentials = ClearCredentialsUseCase(credentialsRepository),
+        requestPairing = RequestPairingUseCase(pairingRepository),
+        getPairingStatus = GetPairingStatusUseCase(pairingRepository),
+        commandRepository = commandRepository,
+        appConfig = AppConfig(),
+        logger = FakeLogger,
+    )
+
     private class FakeCredentialsRepository(initial: DeviceCredentials?) : CredentialsRepository {
         private val state = MutableStateFlow(initial)
         override val credentials: Flow<DeviceCredentials?> = state
@@ -91,6 +155,9 @@ class MainViewModelTest {
     private class FakeCommandRepository : CommandRepository {
         val mutableConnectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
         val mutableCommands = MutableSharedFlow<ScreenCommand>(extraBufferCapacity = 1)
+        var acknowledgedCommandId: String? = null
+        var failedCommandId: String? = null
+        var failedMessage: String? = null
         override val connectionState: StateFlow<ConnectionState> = mutableConnectionState
         override val commands: Flow<ScreenCommand> = mutableCommands
         override fun connect(credentials: DeviceCredentials) {
@@ -99,8 +166,13 @@ class MainViewModelTest {
         override fun disconnect() {
             mutableConnectionState.value = ConnectionState.DISCONNECTED
         }
-        override fun acknowledge(commandId: String) = Unit
-        override fun reportError(commandId: String, message: String) = Unit
+        override fun acknowledge(commandId: String) {
+            acknowledgedCommandId = commandId
+        }
+        override fun reportError(commandId: String, message: String) {
+            failedCommandId = commandId
+            failedMessage = message
+        }
     }
 
     private class FakePairingRepository : PairingRepository {

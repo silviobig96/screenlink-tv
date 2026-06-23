@@ -15,8 +15,7 @@ val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
 
-fun config(name: String, fallback: String): String =
-    providers.gradleProperty(name).orNull ?: localProperties.getProperty(name, fallback)
+fun config(name: String, fallback: String): String = providers.gradleProperty(name).orNull ?: localProperties.getProperty(name, fallback)
 
 android {
     namespace = "com.screenlink.tv"
@@ -100,6 +99,7 @@ dependencies {
     kapt("com.google.dagger:hilt-compiler:2.52")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-datasource-okhttp:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
